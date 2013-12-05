@@ -17,135 +17,163 @@ public class tradesQuotes {
     public static void main(String [] args) {
         double timeStart = System.nanoTime();
         String folder = "D:\\_paper2 Nyse Event\\";
-        HashMap<String, Long> quotes = new HashMap<String, Long>();     // HashMap holding number of quotes per day
-        HashMap<String, Long> trades = new HashMap<String, Long>();     // HashMap holding number of trades per day
-        long nmQuotes = 0;                                              // number of quotes
-        long nmTrades = 0;                                              // number of quotes
-        String companyFile = null;                                      // name of the company and of the file analyzed
+        HashMap<String, Long[]> quotesTrades = new HashMap<String, Long[]>();       // HashMap holding number of quotes and trades per day
+        HashMap<String, Double[]> volumesShares = new HashMap<String, Double[]>();  // HashMap holding number of dollar and share volume per day
 
-        // reading quotes
+        long nmQuotes = 0;                                                      // number of quotes
+        long nmTrades = 0;                                                      // number of trades
+        long nmQuotesNYSE = 0;                                                  // number of quotes
+        long nmTradesNYSE = 0;                                                  // number of trades
+        double shareVolume = 0.0;                                               // number of shares traded
+        double shareVolumeNYSE = 0.0;                                           // number of shares traded at NYSE
+        String[] companies = null;                                              // holder for the names or tickers of the companies
+
+        // reading companies
         try {
-            ZipFile zipFile = new ZipFile(folder + "\\quotes\\BAC_1.zip");
-            companyFile = "BAC";
-            Enumeration entries = zipFile.entries();
-            BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+            File myFile = new File(folder + "companies.csv");
+            FileReader fileReader = new FileReader(myFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line = reader.readLine();
+            companies = line.split(",");
+            reader.close();
+            fileReader.close();
+        } catch (Exception ex){
+            ex.printStackTrace();
+        }
 
-            ZipEntry ze = (ZipEntry) entries.nextElement();
-            long size = ze.getSize();
-            if (size > 0) {
-                System.out.println("Length is " + size);
-                BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));   // TODO: test inputStream vs FileReader
-                String line;
-                String[] lineData = null;
-                String date = null;             // is string in data at position [1]
-                line = br.readLine();
-                while ((line = br.readLine()) != null) {
-                    lineData = line.split(",");
-                    if (!lineData[1].equals(date)){
-                        quotes.put(date, nmQuotes);
-                        date = lineData[1];
-                        nmQuotes = 1;
-                        System.out.println(date);
-                    } else /*if(lineData[8].equals("N"))*/ {
-                        nmQuotes++;
+        for (String company : companies) {
+            Long[] numbers = new Long[4];                   // holds numbers of quotes and trades
+            Double[] volumes = new Double[2];               // holds volumes
+            for (int i = 1; i < 3; i++){
+                // reading quotes
+                String ZipFileName = company + "_" + i + ".zip";
+                try {
+                    ZipFile zipFile = new ZipFile(folder + "\\quotes\\" + ZipFileName);
+                    Enumeration entries = zipFile.entries();
+                    ZipEntry ze = (ZipEntry) entries.nextElement();
+                    long size = ze.getSize();
+
+                    if (size > 0) {
+                        System.out.println("Length is " + size);
+                        BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
+                        String line;
+                        String[] lineData = null;
+                        String date = null;             // is string in data at position [1]
+                        br.readLine();                  // this is just header
+
+                        while ((line = br.readLine()) != null) {            // read until end
+                            lineData = line.split(",");
+                            if (!lineData[1].equals(date)){                 // new date, collect numbers
+                                numbers[0] = nmQuotes;
+                                numbers[1] = nmQuotesNYSE;
+                                if (!quotesTrades.containsKey(date) && date != null){ // prevent duplicities
+                                    quotesTrades.put(date, numbers);
+                                }
+                                numbers = new Long[4];                      // restart numbers
+                                date = lineData[1];
+                                nmQuotes = 1;
+                                nmQuotesNYSE = 1;
+                                System.out.println(date);
+                            } else {
+                                nmQuotes++;
+                                if(lineData[8].equals("N")){
+                                    nmQuotesNYSE++;
+                                }
+                            }
+                        }
+                        br.close();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                br.close();
             }
 
-        }  catch (IOException e) {
-            e.printStackTrace();
-        }
+            try {
+                ZipFile zipFile = new ZipFile(folder + "\\trades\\" + company + ".zip");
+                Enumeration entries = zipFile.entries();
+                ZipEntry ze = (ZipEntry) entries.nextElement();
+                long size = ze.getSize();
 
-        try {
-            ZipFile zipFile = new ZipFile(folder + "\\quotes\\BAC_2.zip");
-            companyFile = "BAC";
-            Enumeration entries = zipFile.entries();
-            BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+                if (size > 0) {
+                    System.out.println("Length is " + size);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
+                    String line;
+                    String[] lineData = null;
+                    String date = null;             // is string in data at position [1]
+                    br.readLine();                  // this is just header
 
-            ZipEntry ze = (ZipEntry) entries.nextElement();
-            long size = ze.getSize();
-            if (size > 0) {
-                System.out.println("Length is " + size);
-                BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));   // TODO: test inputStream vs FileReader
-                String line;
-                String[] lineData = null;
-                String date = null;             // is string in data at position [1]
-                line = br.readLine();
-                while ((line = br.readLine()) != null) {
-                    lineData = line.split(",");
-                    if (!lineData[1].equals(date)){
-                        quotes.put(date, nmQuotes);
-                        date = lineData[1];
-                        nmQuotes = 1;
-                        System.out.println(date);
-                    } else /*if(lineData[8].equals("N"))*/ {
-                        nmQuotes++;
+                    while ((line = br.readLine()) != null) {
+                        lineData = line.split(",");
+                        if (!lineData[1].equals(date)){             // new date, collect data
+                            numbers[2] = nmTrades;
+                            numbers[3] = nmTradesNYSE;
+                            volumes[0] = shareVolume;
+                            volumes[1] = shareVolumeNYSE;
+                            if (quotesTrades.containsKey(date) && date != null){    // already collected date
+                                volumesShares.put(date, volumes);
+                            }
+                            date = lineData[1];
+                            if (quotesTrades.containsKey(date)){                    // asking for new date to get the numbers
+                                numbers = quotesTrades.get(date);
+                            } else {
+                                numbers = new Long[4];
+                            }
+                            volumes = new Double[2];
+                            nmTrades = 1;
+                            nmTradesNYSE = 1;
+                            shareVolume = 0.0;
+                            shareVolumeNYSE = 0.0;
+                            System.out.println(date);
+                        } else  {
+                            nmTrades++;
+                            shareVolume += Double.parseDouble(lineData[4]);
+                            if(lineData[8].equals("N")){
+                                nmTradesNYSE++;
+                                shareVolumeNYSE += Double.parseDouble(lineData[4]);
+                            }
+                        }
                     }
+                    br.close();
                 }
-                br.close();
+
+            }  catch (IOException e) {
+                e.printStackTrace();
             }
 
-        }  catch (IOException e) {
-            e.printStackTrace();
-        }
+            // priting quotes and trades
+            try{
+                String outputFileName = folder + "quotesTrades\\" + company + ".csv";
+                FileWriter writer = new FileWriter(outputFileName, true);
 
-
-        // priting quotes
-        try{
-            String outputFileName = folder + companyFile + ".csv";
-            FileWriter writer = new FileWriter(outputFileName, true);
-
-            Iterator dates = quotes.keySet().iterator();
-            String date = null;
-            while (dates.hasNext()){
-                date = (String) dates.next();
-                writer.write(date + "," + quotes.get(date) + "\r");
+                Iterator dates = quotesTrades.keySet().iterator();
+                String date = null;
+                while (dates.hasNext()){
+                    date = (String) dates.next();
+                    numbers = quotesTrades.get(date);
+                    volumes = volumesShares.get(date);
+                    writer.write(date + "," + numbers[0] + "," + numbers[1] + ","
+                            + numbers[2] +"," + numbers[3] + ","
+                            + volumes[0] + "," + volumes[1] + "," + "\r");
+                }
+                writer.close();
             }
-            writer.close();
+            catch (Exception e){
+                e.printStackTrace();
+                System.exit(1);
+            }
+            quotesTrades = new HashMap<String, Long[]>();
+            volumesShares = new HashMap<String, Double[]>();
         }
-        catch (Exception e){
-            e.printStackTrace();
-            System.exit(1);
-        }
+
+
 
 
         // reading trades
-        try {
-            ZipFile zipFile = new ZipFile(folder + "\\trades\\BAC.zip");
-            companyFile = "BAC";
-            Enumeration entries = zipFile.entries();
-            BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
 
-            ZipEntry ze = (ZipEntry) entries.nextElement();
-            long size = ze.getSize();
-            if (size > 0) {
-                System.out.println("Length is " + size);
-                BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));   // TODO: test inputStream vs FileReader
-                String line;
-                String[] lineData = null;
-                String date = null;             // is string in data at position [1]
-                while ((line = br.readLine()) != null) {
-                    lineData = line.split(",");
-                    if (!lineData[1].equals(date)){
-                        trades.put(date, nmTrades);
-                        date = lineData[1];
-                        nmTrades = 1;
-                        System.out.println(date);
-                    } else /*if(lineData[8].equals("N"))*/ {
-                        nmTrades++;
-                    }
-                }
-                br.close();
-            }
-
-        }  catch (IOException e) {
-            e.printStackTrace();
-        }
 
 
         // printing trades
-        try{
+        /*try{
             String outputFileName = folder + companyFile + ".csv";
             FileWriter writer = new FileWriter(outputFileName, true);
 
@@ -160,7 +188,7 @@ public class tradesQuotes {
         catch (Exception e){
             e.printStackTrace();
             System.exit(1);
-        }
+        }*/
 
         double timeEnd = System.nanoTime();
         System.out.println("Time elapsed: " + (timeEnd - timeStart));
