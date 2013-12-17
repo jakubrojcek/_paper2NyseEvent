@@ -44,7 +44,7 @@ public class tradesQuotes {
         for (String company : companies) {
             Long[] numbers = new Long[4];                   // holds numbers of quotes and trades
             Double[] volumes = new Double[2];               // holds volumes
-            for (int i = 1; i < 3; i++){
+            for (int i = 0; i < 4; i++){
                 // reading quotes
                 String ZipFileName = company + "_" + i + ".zip";
                 try {
@@ -75,11 +75,15 @@ public class tradesQuotes {
                                 nmQuotesNYSE = 1;
                                 System.out.println(date);
                             } else {
-                                nmQuotes++;
-                                if(lineData[8].equals("N")){
+                                if(lineData[8].equals("N") || lineData[8].equals("P")){     // NYSE and Arca
                                     nmQuotesNYSE++;
+                                } else {
+                                    nmQuotes++;
                                 }
                             }
+                        }
+                        if (!quotesTrades.containsKey(date) && date != null){ // prevent duplicities
+                            quotesTrades.put(date, numbers);
                         }
                         br.close();
                     }
@@ -88,56 +92,67 @@ public class tradesQuotes {
                 }
             }
 
-            try {
-                ZipFile zipFile = new ZipFile(folder + "\\trades\\" + company + ".zip");
-                Enumeration entries = zipFile.entries();
-                ZipEntry ze = (ZipEntry) entries.nextElement();
-                long size = ze.getSize();
+            for (int i = 0; i < 3; i++){
+                String ZipFileName = company + "_" + i + ".zip";
+                try {
+                    ZipFile zipFile = new ZipFile(folder + "\\trades\\" + ZipFileName);
+                    Enumeration entries = zipFile.entries();
+                    ZipEntry ze = (ZipEntry) entries.nextElement();
+                    long size = ze.getSize();
 
-                if (size > 0) {
-                    System.out.println("Length is " + size);
-                    BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
-                    String line;
-                    String[] lineData = null;
-                    String date = null;             // is string in data at position [1]
-                    br.readLine();                  // this is just header
+                    if (size > 0) {
+                        System.out.println("Length is " + size);
+                        BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
+                        String line;
+                        String[] lineData = null;
+                        String date = null;             // is string in data at position [1]
+                        br.readLine();                  // this is just header
 
-                    while ((line = br.readLine()) != null) {
-                        lineData = line.split(",");
-                        if (!lineData[1].equals(date)){             // new date, collect data
-                            numbers[2] = nmTrades;
-                            numbers[3] = nmTradesNYSE;
-                            volumes[0] = shareVolume;
-                            volumes[1] = shareVolumeNYSE;
-                            if (quotesTrades.containsKey(date) && date != null){    // already collected date
-                                volumesShares.put(date, volumes);
-                            }
-                            date = lineData[1];
-                            if (quotesTrades.containsKey(date)){                    // asking for new date to get the numbers
-                                numbers = quotesTrades.get(date);
-                            } else {
-                                numbers = new Long[4];
-                            }
-                            volumes = new Double[2];
-                            nmTrades = 1;
-                            nmTradesNYSE = 1;
-                            shareVolume = 0.0;
-                            shareVolumeNYSE = 0.0;
-                            System.out.println(date);
-                        } else  {
-                            nmTrades++;
-                            shareVolume += Double.parseDouble(lineData[4]);
-                            if(lineData[8].equals("N")){
-                                nmTradesNYSE++;
-                                shareVolumeNYSE += Double.parseDouble(lineData[4]);
+                        while ((line = br.readLine()) != null) {
+                            lineData = line.split(",");
+                            if (!lineData[1].equals(date)){             // new date, collect data
+                                numbers[2] = nmTrades;
+                                numbers[3] = nmTradesNYSE;
+                                volumes[0] = shareVolume;
+                                volumes[1] = shareVolumeNYSE;
+                                if (quotesTrades.containsKey(date) && date != null){    // already collected date
+                                    if (!volumesShares.containsKey(date)){
+                                        volumesShares.put(date, volumes);
+                                    }
+                                }
+                                date = lineData[1];                     // new date
+                                if (quotesTrades.containsKey(date) && !volumesShares.containsKey(date)){    // asking for new date to get the numbers and not duplicities
+                                    numbers = quotesTrades.get(date);
+                                } else {
+                                    numbers = new Long[4];
+                                }
+                                volumes = new Double[2];
+                                nmTrades = 1;
+                                nmTradesNYSE = 1;
+                                shareVolume = 0.0;
+                                shareVolumeNYSE = 0.0;
+                                System.out.println(date);
+                            } else  {
+                                if(lineData[8].equals("N") || lineData[8].equals("P")){     // NYSE and ARCA
+                                    nmTradesNYSE++;
+                                    shareVolumeNYSE += Double.parseDouble(lineData[4]);
+                                } else {
+                                    nmTrades++;
+                                    shareVolume += Double.parseDouble(lineData[4]);
+                                }
                             }
                         }
+                        if (quotesTrades.containsKey(date) && date != null){    // already collected date
+                            if (!volumesShares.containsKey(date)){
+                                volumesShares.put(date, volumes);
+                            }
+                        }
+                        br.close();
                     }
-                    br.close();
-                }
 
-            }  catch (IOException e) {
-                e.printStackTrace();
+                }  catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             // priting quotes and trades
