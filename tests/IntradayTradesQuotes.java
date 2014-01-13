@@ -41,13 +41,13 @@ public class IntradayTradesQuotes {
         String tradingStart = "9:30:00";
         String tradingEnd = "16:00:00";
 
-        int Ask;
-        int Bid;
+        double Ask;
+        double Bid;
         int AskSize;
         int BidSize;
 
         try {
-            File myFile = new File(folder + "companies.csv");
+            File myFile = new File(folder + "companiesTest.csv");
             FileReader fileReader = new FileReader(myFile);
             BufferedReader reader = new BufferedReader(fileReader);
             String line = reader.readLine();
@@ -58,7 +58,7 @@ public class IntradayTradesQuotes {
             ex.printStackTrace();
         }
         for (String company : companies) {
-            for (int i = 0; i < 4; i++){
+            for (int i = 0; i < 2; i++){
                 // reading quotes
                 String ZipFileName = company + "_" + i + ".zip";
                 try {
@@ -77,19 +77,35 @@ public class IntradayTradesQuotes {
                         long timeEnd = sdf.parse(tradingEnd).getTime();
                         long time2 = time1; // current time
                         br.readLine(); // this is just header
-                        Ask = 999; Bid = 999; AskSize = 999; BidSize = 999;
+                        Ask = 999.0; Bid = 999.0; AskSize = 999; BidSize = 999;
 
                         while ((line = br.readLine()) != null) {
                             lineData = line.split(",");
                             if (!lineData[1].equals(date)){         // new unique date, collect data
-                                ArrayList[] bursts = {qAall, qAnyse, qBall, qBnyse, qAll, qNYSE, nAll, nNYSE};
+                                qAall.add(SUMqAall);    SUMqAall = 0;
+                                qAnyse.add(SUMqAnyse);  SUMqAnyse = 0;
+                                qBall.add(SUMqBall);    SUMqBall = 0;
+                                qBnyse.add(SUMqBnyse);  SUMqBnyse = 0;
+                                qAll.add(SUMqALL);      SUMqALL = 0;
+                                qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
                                 if (!tradesBursts.containsKey(date) && date != null){   // if date still not in tradesBursts
+                                    long nextTime = (timeEnd - time1) / interval;
+                                    while (nextTime > 0){   // setting empty time slots with 0's
+                                        qAall.add(SUMqAall);    SUMqAall = 0;
+                                        qAnyse.add(SUMqAnyse);  SUMqAnyse = 0;
+                                        qBall.add(SUMqBall);    SUMqBall = 0;
+                                        qBnyse.add(SUMqBnyse);  SUMqBnyse = 0;
+                                        qAll.add(SUMqALL);      SUMqALL = 0;
+                                        qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
+
+                                        time1 += interval;
+                                        nextTime = (timeEnd - time1) / interval;
+                                    }
+                                    ArrayList[] bursts = {qAall, qAnyse, qBall, qBnyse, qAll, qNYSE, nAll, nNYSE};
                                     tradesBursts.put(date, bursts);
                                 }
                                 qAll = new ArrayList(4681);     qAall = new ArrayList(4681);    qBall = new ArrayList(4681);
                                 qNYSE = new ArrayList(4681);    qAnyse = new ArrayList(4681);   qBnyse = new ArrayList(4681);
-                                SUMqAall = 0;   SUMqAnyse = 0;  SUMqBall = 0;
-                                SUMqBnyse = 0;  SUMqALL = 0;    SUMqNYSE = 0;
                                 Ask = 999; Bid = 999; AskSize = 999; BidSize = 999;
 
                                 date = lineData[1]; // new date
@@ -104,7 +120,7 @@ public class IntradayTradesQuotes {
                                     qAll.add(SUMqALL);      SUMqALL = 0;
                                     qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
 
-                                    time1 += 5000;
+                                    time1 += interval;
                                     nextTime = (Math.min(time2, timeEnd) - time1) / interval;
                                 }
                                 if (time2 > timeEnd){
@@ -112,22 +128,22 @@ public class IntradayTradesQuotes {
                                 }
                                 if(lineData[8].equals("N") || lineData[8].equals("P")){ // NYSE and ARCA
                                     SUMqNYSE++;
-                                    if (Bid != Integer.parseInt(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
+                                    if (Bid != Double.parseDouble(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
                                         SUMqBnyse++;
                                     }
-                                    if (Ask != Integer.parseInt(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
+                                    if (Ask != Double.parseDouble(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
                                         SUMqAnyse++;
                                     }
                                 } else {
                                     SUMqALL++;
-                                    if (Bid != Integer.parseInt(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
+                                    if (Bid != Double.parseDouble(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
                                         SUMqBall++;
                                     }
-                                    if (Ask != Integer.parseInt(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
+                                    if (Ask != Double.parseDouble(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
                                         SUMqAall++;
                                     }
                                 }
-                                Ask = Integer.parseInt(lineData[4]); Bid = Integer.parseInt(lineData[3]);
+                                Ask = Double.parseDouble(lineData[4]); Bid = Double.parseDouble(lineData[3]);
                                 AskSize = Integer.parseInt(lineData[6]); BidSize = Integer.parseInt(lineData[5]);
                                 System.out.println(date);
                             } else {                        // still the same date, new line of quote
@@ -144,27 +160,27 @@ public class IntradayTradesQuotes {
                                     qAll.add(SUMqALL);      SUMqALL = 0;
                                     qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
 
-                                    time1 += 5000; // TODO: increase by 5 until 55, then 0, alternatively put zeros until ratio less than 2
+                                    time1 += interval; // TODO: increase by 5 until 55, then 0, alternatively put zeros until ratio less than 2
                                     nextTime = (time2 - time1) / interval;
                                 }
                                 if(lineData[8].equals("N") || lineData[8].equals("P")){ // NYSE and ARCA
                                     SUMqNYSE++;
-                                    if (Bid != Integer.parseInt(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
+                                    if (Bid != Double.parseDouble(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
                                         SUMqBnyse++;
                                     }
-                                    if (Ask != Integer.parseInt(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
+                                    if (Ask != Double.parseDouble(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
                                         SUMqAnyse++;
                                     }
                                 } else {
                                     SUMqALL++;
-                                    if (Bid != Integer.parseInt(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
+                                    if (Bid != Double.parseDouble(lineData[3]) || BidSize != Integer.parseInt(lineData[5])){
                                         SUMqBall++;
                                     }
-                                    if (Ask != Integer.parseInt(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
+                                    if (Ask != Double.parseDouble(lineData[4]) || AskSize != Integer.parseInt(lineData[6])){
                                         SUMqAall++;
                                     }
                                 }
-                                Ask = Integer.parseInt(lineData[4]); Bid = Integer.parseInt(lineData[3]);
+                                Ask = Double.parseDouble(lineData[4]); Bid = Double.parseDouble(lineData[3]);
                                 AskSize = Integer.parseInt(lineData[6]); BidSize = Integer.parseInt(lineData[5]);
                             }
                         }
@@ -176,13 +192,26 @@ public class IntradayTradesQuotes {
                             qBnyse.add(SUMqBnyse);
                             qAll.add(SUMqALL);
                             qNYSE.add(SUMqNYSE);
-                            ArrayList[] bursts = {qAall, qAnyse, qBall, qBnyse, qAll, qNYSE, nAll, nNYSE};
-                            tradesBursts.put(date, bursts);
                             SUMqAall = 0;   SUMqAnyse = 0;  SUMqBall = 0;
                             SUMqBnyse = 0;  SUMqALL = 0;    SUMqNYSE = 0;
+                            long nextTime = (timeEnd - time1) / interval;
+                            while (nextTime > 0){   // setting empty time slots with 0's
+                                qAall.add(SUMqAall);    SUMqAall = 0;
+                                qAnyse.add(SUMqAnyse);  SUMqAnyse = 0;
+                                qBall.add(SUMqBall);    SUMqBall = 0;
+                                qBnyse.add(SUMqBnyse);  SUMqBnyse = 0;
+                                qAll.add(SUMqALL);      SUMqALL = 0;
+                                qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
+
+                                time1 += interval;
+                                nextTime = (timeEnd - time1) / interval;
+                            }
+                            ArrayList[] bursts = {qAall, qAnyse, qBall, qBnyse, qAll, qNYSE, nAll, nNYSE};
+                            tradesBursts.put(date, bursts);
+
                             qAll = new ArrayList(4681);     qAall = new ArrayList(4681);    qBall = new ArrayList(4681);
                             qNYSE = new ArrayList(4681);    qAnyse = new ArrayList(4681);   qBnyse = new ArrayList(4681);
-                            Ask = 999; Bid = 999; AskSize = 999; BidSize = 999;
+                            Ask = 999.0; Bid = 999.0; AskSize = 999; BidSize = 999;
                         }
                         br.close();
                     }
@@ -194,7 +223,7 @@ public class IntradayTradesQuotes {
                 }
             }
 
-            for (int i = 0; i < 3; i++){
+            for (int i = 0; i < 2; i++){
                 String ZipFileName = company + "_" + i + ".zip";
                 try {
                     ZipFile zipFile = new ZipFile(folder + "\\trades\\" + ZipFileName);
@@ -215,9 +244,17 @@ public class IntradayTradesQuotes {
 
                         while ((line = br.readLine()) != null) {
                             lineData = line.split(",");
-                            if (!lineData[1].equals(date)){         // new unique date, collect data
-                                date = lineData[1]; // new date
-                                if (tradesBursts.containsKey(date)){   // if date still not in tradesBursts
+                            if (!lineData[1].equals(date)){             // new unique date, collect data
+                                nAll.add(SUMnALL);      SUMnALL = 0;
+                                nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
+                                if (tradesBursts.containsKey(date) && date != null){    // if date still not in tradesBursts
+                                    long nextTime = (timeEnd - time1) / interval;
+                                    while (nextTime > 0){   // setting empty time slots with 0's
+                                        nAll.add(SUMnALL);      SUMnALL = 0;
+                                        nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
+                                        time1 += interval;
+                                        nextTime = (timeEnd - time1) / interval;
+                                    }
                                     ArrayList[] bursts = tradesBursts.get(date);
                                     bursts[6] = nAll;
                                     bursts[7] = nNYSE;
@@ -227,13 +264,14 @@ public class IntradayTradesQuotes {
                                 SUMnALL = 0;
                                 SUMnNYSE = 0;
 
+                                date = lineData[1];                     // new date
                                 time1 = sdf.parse(tradingStart).getTime();
                                 time2 = sdf.parse(lineData[2]).getTime();
                                 long nextTime = (Math.min(time2, timeEnd) - time1) / interval;
                                 while (nextTime > 0){   // setting empty time slots with 0's
                                     nAll.add(SUMnALL);      SUMnALL = 0;
                                     nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
-                                    time1 += 5000;
+                                    time1 += interval;
                                     nextTime = (Math.min(time2, timeEnd) - time1) / interval;
                                 }
                                 if (time2 > timeEnd){
@@ -246,6 +284,9 @@ public class IntradayTradesQuotes {
                                 }
                             } else {                        // still the same date, new line of quote
                                 time2 = sdf.parse(lineData[2]).getTime();
+                                if (time2 == timeEnd){
+                                    System.out.println("end");
+                                }
                                 if (time2 > timeEnd){
                                     continue;
                                 }
@@ -254,7 +295,7 @@ public class IntradayTradesQuotes {
                                     nAll.add(SUMnALL);      SUMnALL = 0;
                                     nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
 
-                                    time1 += 5000;          // TODO: change this to interval
+                                    time1 += interval;          // TODO: change this to interval
                                     nextTime = (time2 - time1) / interval;
                                 }
                                 if(lineData[8].equals("N") || lineData[8].equals("P")){ // NYSE and ARCA
@@ -266,7 +307,18 @@ public class IntradayTradesQuotes {
                         }
 
                         if (tradesBursts.containsKey(date) && date != null){   // if date still not in tradesBursts
-                            ArrayList[] bursts = tradesBursts.get(date);
+                            nAll.add(SUMnALL);
+                            nNYSE.add(SUMnNYSE);
+                            SUMnALL = 0;
+                            SUMnNYSE = 0;
+                            long nextTime = (timeEnd - time1) / interval;
+                            while (nextTime > 0){   // setting empty time slots with 0's
+                                nAll.add(SUMnALL);      SUMnALL = 0;
+                                nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
+                                time1 += interval;
+                                nextTime = (timeEnd - time1) / interval;
+                            }
+                            ArrayList[] bursts = tradesBursts.get(date);       // TODO: put nSUMS here first?
                             bursts[6] = nAll;
                             bursts[7] = nNYSE;
                         }
@@ -285,7 +337,8 @@ public class IntradayTradesQuotes {
             }
 
             allBursts.put(company, tradesBursts);
-            tradesBursts = new HashMap<String, ArrayList[]>();
+            tradesBursts = allBursts.get("vodka");
+            //tradesBursts = new HashMap<String, ArrayList[]>();
         }
         try{
             String outputFileName = folder + "quotesTrades\\" + "AA_burst" + ".csv";
@@ -299,8 +352,14 @@ public class IntradayTradesQuotes {
                 ArrayList[] bursts = tradesBursts.get(date);
                 sz = bursts[0].size();
                 for (int i = 0; i < sz; i++){
-                    writer.write(bursts[0].get(i) + "," + bursts[1].get(i) + "\r");
+                    if (i == sz - 2){
+                        System.out.println("end");
+                    }
+                    writer.write(bursts[0].get(i) + "," + bursts[1].get(i) + "," + bursts[2].get(i) + "," + bursts[3].get(i) +
+                            "," + bursts[4].get(i) + "," + bursts[5].get(i) + "," + bursts[6].get(i) + "," + bursts[7].get(i) + "\r");
                 }
+                System.out.println(bursts[0].get(4680) + "," + bursts[1].get(4680) + "," + bursts[2].get(4680) + "," + bursts[3].get(4680) +
+                        "," + bursts[4].get(4680) + "," + bursts[5].get(4680) + "," + bursts[6].get(4680) + "," + bursts[7].get(4680));
             }
             writer.close();
         }
