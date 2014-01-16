@@ -1,16 +1,26 @@
+
+
+
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.TreeMap;
+        import java.util.Enumeration;
+        import java.util.HashMap;
+        import java.util.Iterator;
+        import java.util.TreeMap;
+        import java.util.zip.ZipEntry;
+        import java.util.zip.ZipFile;
 
 /**
- * Created by rojcek on 14.01.14.
+ * Created with IntelliJ IDEA.
+ * User: rojcek
+ * Date: 06.12.13
+ * Time: 17:10
+ * To change this template use File | Settings | File Templates.
  */
-public class JoiningFiles {
+public class IntradayJoiningFiles {
     public static void main(String [] args) {
         double timeStart = System.nanoTime();
         String folder = "D:\\_paper2 Nyse Event\\";
-        TreeMap<String, HashMap<String, String>> joinedData = new TreeMap<String, HashMap<String, String>>();   // date, company, values
+        TreeMap<Integer, String> joinedData = new TreeMap<Integer, String>();   // line number, array of values
 
         long nmQuotes = 0;                                                      // number of quotes
         long nmTrades = 0;                                                      // number of trades
@@ -19,7 +29,8 @@ public class JoiningFiles {
         double shareVolume = 0.0;                                               // number of shares traded
         double shareVolumeNYSE = 0.0;                                           // number of shares traded at NYSE
         String[] companies = null;                                              // holder for the names or tickers of the companies
-        HashMap<String, String> dateData;
+        String joinedLineData = null;
+        String header = "date,";
 
         // reading companies
         try {
@@ -36,66 +47,48 @@ public class JoiningFiles {
 
         for (String company : companies) {
             // reading quotes
-            String FileName = company + ".csv";
+            String FileName = company + "_burst.csv";
             try {
                 File file = new File(folder + "\\quotesTrades\\" + FileName);
                 FileReader fileReader = new FileReader(file);
                 BufferedReader br = new BufferedReader(fileReader);
                 String line;
                 String companyEntry;
-                String[] lineData = null;
+                int i = 1;
                 while ((line = br.readLine()) != null) {            // read until end
-                    lineData = line.split(",");
-                    if (!joinedData.containsKey(lineData[0])){      // new date, collect numbers
-                        dateData = new HashMap<String, String>();
-                        joinedData.put(lineData[0], dateData);
+                    if (joinedData.containsKey(i)){
+                        joinedLineData = joinedData.get(i);
+                        companyEntry = line.substring(9);
+                        joinedLineData += "," + companyEntry;
                     } else {
-                        dateData = joinedData.get(lineData[0]);
+                        joinedLineData= new String();
+                        companyEntry = line;
+                        joinedLineData += companyEntry;
                     }
-                    companyEntry = line.substring(9, line.length());
-                    dateData.put(company, companyEntry);
+                    joinedData.put(i, joinedLineData);
+                    i++;
                 }
                 br.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            header = header + company + "qAall," + company + "qAnyse," +  company + "qBall,"
+                    + company + "qBnyse," + company + "qAll," + company + "qNYSE,"
+                    + company + "nAll," + company + "nNYSE,";
         }
 
         // priting quotes and trades
         try{
             String outputFileName = folder + "quotesTrades\\IntradayJoinedData.csv";
             FileWriter writer = new FileWriter(outputFileName, true);
-
-            Iterator dates = joinedData.keySet().iterator();
-            Iterator companyKeys;
-            HashMap<String, String> companyLine;
-            String date = null;
-            String[] completeData = new String[joinedData.keySet().size()];
-            String company;
-            String header = "date,";
-            int i = 0;
-            while (dates.hasNext()){
-                date = (String) dates.next();
-                companyKeys = joinedData.get(date).keySet().iterator();
-                companyLine = joinedData.get(date);
-                completeData[i] = date + ",";
-                while (companyKeys.hasNext()){
-                    company = (String) companyKeys.next();
-                    if (i == 0){
-                        header = header + company + "nmQuotes," + company + "nmQuotesNYSE," +
-                                company + "nmTrades," + company + "nmTradesNYSE," +
-                                company + "shareVolume," + company + "shareVolumeNYSE,";
-                    }
-                    completeData[i] = completeData[i] + companyLine.get(company);
-                }
-                completeData[i] = completeData[i] + "\r";
-                if (i == 0){header = header + "\r";}
-                i++;
-            }
+            header = header + "\r";
             writer.write(header);
-            for (String s : completeData){
-                writer.write(s);
+
+            int sz = joinedData.keySet().size();
+            for (int i = 1; i < (sz + 1); i++){
+                joinedLineData = joinedData.get(i);
+                writer.write(joinedLineData + "\r");
             }
             writer.close();
         }

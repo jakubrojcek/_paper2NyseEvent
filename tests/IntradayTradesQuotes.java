@@ -1,11 +1,8 @@
 import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.zip.ZipFile;
-import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 
 /**
@@ -17,8 +14,8 @@ public class IntradayTradesQuotes {
         String folder = "D:\\_paper2 Nyse Event\\";
         String[] companies = null;
 
-        HashMap<String, ArrayList[]> tradesBursts = new HashMap<String, ArrayList[]>(); // date, trades per 5 secs
-        HashMap<String, HashMap> allBursts = new HashMap<String, HashMap>();            // company and previous HashMap
+        TreeMap<String, ArrayList[]> tradesBursts = new TreeMap<String, ArrayList[]>(); // date, trades per 5 secs
+        HashMap<String, TreeMap> allBursts = new HashMap<String, TreeMap>();            // company and previous HashMap
         ArrayList qAll = new ArrayList(4681);   // all quotes per 5 second intervals
         ArrayList qAall = new ArrayList(4681);  // quotes at Ask per 5 second intervals
         ArrayList qBall = new ArrayList(4681);  // quotes at Bid per 5 second intervals
@@ -47,7 +44,7 @@ public class IntradayTradesQuotes {
         int BidSize;
 
         try {
-            File myFile = new File(folder + "companiesTest.csv");
+            File myFile = new File(folder + "companies.csv");
             FileReader fileReader = new FileReader(myFile);
             BufferedReader reader = new BufferedReader(fileReader);
             String line = reader.readLine();
@@ -58,7 +55,7 @@ public class IntradayTradesQuotes {
             ex.printStackTrace();
         }
         for (String company : companies) {
-            for (int i = 0; i < 2; i++){
+            for (int i = 0; i < 4; i++){
                 // reading quotes
                 String ZipFileName = company + "_" + i + ".zip";
                 try {
@@ -72,7 +69,7 @@ public class IntradayTradesQuotes {
                         BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
                         String line;
                         String[] lineData = null;
-                        String date = null; // is string in data at position [1]
+                        String date = "nullDate"; // is string in data at position [1]
                         long time1 = sdf.parse(tradingStart).getTime(); // past 5 sec threshold
                         long timeEnd = sdf.parse(tradingEnd).getTime();
                         long time2 = time1; // current time
@@ -88,7 +85,7 @@ public class IntradayTradesQuotes {
                                 qBnyse.add(SUMqBnyse);  SUMqBnyse = 0;
                                 qAll.add(SUMqALL);      SUMqALL = 0;
                                 qNYSE.add(SUMqNYSE);    SUMqNYSE = 0;
-                                if (!tradesBursts.containsKey(date) && date != null){   // if date still not in tradesBursts
+                                if (!tradesBursts.containsKey(date) && !date.equals("nullDate")){   // if date still not in tradesBursts
                                     long nextTime = (timeEnd - time1) / interval;
                                     while (nextTime > 0){   // setting empty time slots with 0's
                                         qAall.add(SUMqAall);    SUMqAall = 0;
@@ -185,7 +182,7 @@ public class IntradayTradesQuotes {
                             }
                         }
 
-                        if (!tradesBursts.containsKey(date) && date != null){   // for the last row of the last date
+                        if (!tradesBursts.containsKey(date) && !date.equals("nullDate")){   // for the last row of the last date
                             qAall.add(SUMqAall);
                             qAnyse.add(SUMqAnyse);
                             qBall.add(SUMqBall);
@@ -223,7 +220,7 @@ public class IntradayTradesQuotes {
                 }
             }
 
-            for (int i = 0; i < 2; i++){
+            for (int i = 0; i < 3; i++){
                 String ZipFileName = company + "_" + i + ".zip";
                 try {
                     ZipFile zipFile = new ZipFile(folder + "\\trades\\" + ZipFileName);
@@ -236,7 +233,7 @@ public class IntradayTradesQuotes {
                         BufferedReader br = new BufferedReader(new InputStreamReader(zipFile.getInputStream(ze)));
                         String line;
                         String[] lineData = null;
-                        String date = null; // is string in data at position [1]
+                        String date = "nullDate"; // is string in data at position [1]
                         long time1 = sdf.parse(tradingStart).getTime(); // past 5 sec threshold
                         long timeEnd = sdf.parse(tradingEnd).getTime();
                         long time2 = time1; // current time
@@ -247,7 +244,7 @@ public class IntradayTradesQuotes {
                             if (!lineData[1].equals(date)){             // new unique date, collect data
                                 nAll.add(SUMnALL);      SUMnALL = 0;
                                 nNYSE.add(SUMnNYSE);    SUMnNYSE = 0;
-                                if (tradesBursts.containsKey(date) && date != null){    // if date still not in tradesBursts
+                                if (tradesBursts.containsKey(date) && !date.equals("nullDate")){    // if date still not in tradesBursts
                                     long nextTime = (timeEnd - time1) / interval;
                                     while (nextTime > 0){   // setting empty time slots with 0's
                                         nAll.add(SUMnALL);      SUMnALL = 0;
@@ -284,9 +281,6 @@ public class IntradayTradesQuotes {
                                 }
                             } else {                        // still the same date, new line of quote
                                 time2 = sdf.parse(lineData[2]).getTime();
-                                if (time2 == timeEnd){
-                                    System.out.println("end");
-                                }
                                 if (time2 > timeEnd){
                                     continue;
                                 }
@@ -306,7 +300,7 @@ public class IntradayTradesQuotes {
                             }
                         }
 
-                        if (tradesBursts.containsKey(date) && date != null){   // if date still not in tradesBursts
+                        if (tradesBursts.containsKey(date) && !date.equals("nullDate")){   // if date still not in tradesBursts
                             nAll.add(SUMnALL);
                             nNYSE.add(SUMnNYSE);
                             SUMnALL = 0;
@@ -337,36 +331,31 @@ public class IntradayTradesQuotes {
             }
 
             allBursts.put(company, tradesBursts);
-            tradesBursts = allBursts.get("vodka");
-            //tradesBursts = new HashMap<String, ArrayList[]>();
-        }
-        try{
-            String outputFileName = folder + "quotesTrades\\" + "AA_burst" + ".csv";
-            FileWriter writer = new FileWriter(outputFileName, true);
+            //tradesBursts = allBursts.get("vodka");
 
-            Iterator dates = tradesBursts.keySet().iterator();
-            String date = null;
-            int sz = 0;
-            while (dates.hasNext()){
-                date = (String) dates.next();
-                ArrayList[] bursts = tradesBursts.get(date);
-                sz = bursts[0].size();
-                for (int i = 0; i < sz; i++){
-                    if (i == sz - 2){
-                        System.out.println("end");
+            try{
+                String outputFileName = folder + "quotesTrades\\" + company + "_burst" + ".csv";
+                FileWriter writer = new FileWriter(outputFileName, true);
+                tradesBursts = allBursts.get(company);
+                Iterator dates = tradesBursts.keySet().iterator();
+                String date = "nullDate";
+                int sz = 0;
+                while (dates.hasNext()){
+                    date = (String) dates.next();
+                    ArrayList[] bursts = tradesBursts.get(date);
+                    sz = bursts[0].size();
+                    for (int i = 0; i < sz; i++){
+                        writer.write(date + "," + bursts[0].get(i) + "," + bursts[1].get(i) + "," + bursts[2].get(i) + "," + bursts[3].get(i) +
+                                "," + bursts[4].get(i) + "," + bursts[5].get(i) + "," + bursts[6].get(i) + "," + bursts[7].get(i) + "\r");
                     }
-                    writer.write(bursts[0].get(i) + "," + bursts[1].get(i) + "," + bursts[2].get(i) + "," + bursts[3].get(i) +
-                            "," + bursts[4].get(i) + "," + bursts[5].get(i) + "," + bursts[6].get(i) + "," + bursts[7].get(i) + "\r");
                 }
-                System.out.println(bursts[0].get(4680) + "," + bursts[1].get(4680) + "," + bursts[2].get(4680) + "," + bursts[3].get(4680) +
-                        "," + bursts[4].get(4680) + "," + bursts[5].get(4680) + "," + bursts[6].get(4680) + "," + bursts[7].get(4680));
+                writer.close();
             }
-            writer.close();
+            catch (Exception e){
+                e.printStackTrace();
+                System.exit(1);
+            }
+            tradesBursts = new TreeMap<String, ArrayList[]>();
         }
-        catch (Exception e){
-            e.printStackTrace();
-            System.exit(1);
-        }
-
     }
 }
