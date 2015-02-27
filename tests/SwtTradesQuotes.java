@@ -1,5 +1,6 @@
 /**
  * Created by rojcek on 21.01.14.
+ * Shifted wavelet implementation for detecting bursts
  */
 public class SwtTradesQuotes {
     public static void main(String [] args) {

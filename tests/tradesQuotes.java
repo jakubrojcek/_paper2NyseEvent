@@ -12,13 +12,15 @@ import java.util.zip.ZipEntry;
  * Date: 04.12.13
  * Time: 15:57
  * To change this template use File | Settings | File Templates.
+ * This class sifts through many big zipped files given their names and produces per date cumulants of quotes, trades and volumes
  */
 public class tradesQuotes {
     public static void main(String [] args) {
         double timeStart = System.nanoTime();
-        String folder = "D:\\_paper2 Nyse Event\\";
-        HashMap<String, Long[]> quotesTrades = new HashMap<String, Long[]>();       // HashMap holding number of quotes and trades per day
-        HashMap<String, Double[]> volumesShares = new HashMap<String, Double[]>();  // HashMap holding number of dollar and share volume per day
+        String folder = "C:\\Users\\rojcek\\Documents\\School\\SFI\\_paper2b NYSE event\\DATA\\";
+        HashMap<String, Long[]> quotesTrades = new HashMap<String, Long[]>();           // HashMap holding number of quotes and trades per day
+        HashMap<String, Double[]> volumesShares = new HashMap<String, Double[]>();        // HashMap holding number of dollar and share volume per day
+        HashMap<String, String[]> companysFiles = new HashMap<String, String[]>();  // HashMap holding company's name and a string of quotesFiles and a string of tradesFiles
 
         long nmQuotes = 0;                                                      // number of quotes
         long nmTrades = 0;                                                      // number of trades
@@ -28,7 +30,7 @@ public class tradesQuotes {
         double shareVolumeNYSE = 0.0;                                           // number of shares traded at NYSE
         String[] companies = null;                                              // holder for the names or tickers of the companies
 
-        // reading companies
+        // reading companies TODO: you can pass this later
         try {
             File myFile = new File(folder + "companies.csv");
             FileReader fileReader = new FileReader(myFile);
@@ -40,13 +42,48 @@ public class tradesQuotes {
         } catch (Exception ex){
             ex.printStackTrace();
         }
+        // reading files TODO: you can pass this later
+        try {
+            File myFile = new File(folder + "quotesFiles.csv");
+            FileReader fileReader = new FileReader(myFile);
+            BufferedReader reader = new BufferedReader(fileReader);
+            String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] quotesFiles = line.split(",");
+                    String quotesFilesTemp = new String();
+                    for (int i = 1; i < quotesFiles.length; i++){
+                        quotesFilesTemp += quotesFiles[i] + ",";
+                    }
+                    String[] entry = new String[2];
+                    entry[0] = quotesFilesTemp;
+                    companysFiles.put(quotesFiles[0], entry);
+                }
+            // process tradesFiles now
+            myFile = new File(folder + "tradesFiles.csv");
+            fileReader = new FileReader(myFile);
+            reader = new BufferedReader(fileReader);
+            while ((line = reader.readLine()) != null) {
+                String[] tradesFiles = line.split(",");
+                String tradesFilesTemp = new String();
+                for (int i = 1; i < tradesFiles.length; i++){
+                    tradesFilesTemp += tradesFiles[i] + ",";
+                }
+                String[] entry = companysFiles.get(tradesFiles[0]);
+                entry[1] = tradesFilesTemp;
+                companysFiles.put(tradesFiles[0], entry);
+            }
+            reader.close();
+            fileReader.close();
+        } catch (Exception ex){
+            ex.printStackTrace();
+        }
 
         for (String company : companies) {
             Long[] numbers = new Long[4];                   // holds numbers of quotes and trades
             Double[] volumes = new Double[2];               // holds volumes
-            for (int i = 0; i < 4; i++){
-                // reading quotes
-                String ZipFileName = company + "_" + i + ".zip";
+            String[] quotesFiles = companysFiles.get(company)[0].split(",");
+
+            for (String ZipFileName : quotesFiles){         // processing quotes
                 try {
                     ZipFile zipFile = new ZipFile(folder + "\\quotes\\" + ZipFileName);
                     Enumeration entries = zipFile.entries();
@@ -92,8 +129,8 @@ public class tradesQuotes {
                 }
             }
 
-            for (int i = 0; i < 3; i++){
-                String ZipFileName = company + "_" + i + ".zip";
+            String[] tradesFiles = companysFiles.get(company)[1].split(",");
+            for (String ZipFileName : tradesFiles){        // processing trades
                 try {
                     ZipFile zipFile = new ZipFile(folder + "\\trades\\" + ZipFileName);
                     Enumeration entries = zipFile.entries();

@@ -9,7 +9,7 @@ import java.util.TreeMap;
 public class JoiningFiles {
     public static void main(String [] args) {
         double timeStart = System.nanoTime();
-        String folder = "D:\\_paper2 Nyse Event\\";
+        String folder = "C:\\Users\\rojcek\\Documents\\School\\SFI\\_paper2b NYSE event\\";
         TreeMap<String, HashMap<String, String>> joinedData = new TreeMap<String, HashMap<String, String>>();   // date, company, values
 
         long nmQuotes = 0;                                                      // number of quotes
