@@ -19,11 +19,11 @@ public class IntradayTradesQuotes {
 
         int interval = 5000;          // the length of the interval is 5 sec or 5000 millisec, 468000 = 7.8' or 50 intervals
         int intervalFilter = 90000;     // the length of interval looking back to NBBOs to discard transaction, 90s reporting obligation period
-        int nWindow = (intervalFilter / interval) + 1;
+        int nWindow = (intervalFilter / interval) + 1;      // length of window in terms of basic intervals we use
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss"); // format of the date to use
         String tradingStart = "9:30:00";
         String tradingEnd = "16:00:00";
-        int nInterval = 1;
+        int nInterval = 1;                  // length of holders per day
         try {
             nInterval = 1 + (int)(sdf.parse(tradingEnd).getTime() - sdf.parse(tradingStart).getTime()) / interval;
         } catch (Exception ex){
@@ -67,7 +67,7 @@ public class IntradayTradesQuotes {
         long SUMnFilteredAll = 0;                       // interval sum of remaining trades all
         long SUMnFilteredNYSE = 0;                      // interval sum of remaining trades NYSE
         double bestBid = 0.0;                           // best bid in the interval
-        double bestAsk = 999.0;                         // best bid in the interval
+        double bestAsk = -999.0;                         // best bid in the interval
         double vwapPrice = 0.0;                         // vwap price in the interval
         double vwapQuantity = 999.0;                    // vwap quantity in the interval
         double[] bids4Filtering = new double[nInterval];// to determine if to keep transaction or not
@@ -139,7 +139,7 @@ public class IntradayTradesQuotes {
                         long timeEnd = sdf.parse(tradingEnd).getTime();
                         long time2 = time1; // current time
                         br.readLine(); // this is just header
-                        Ask = 999.0; Bid = 999.0; AskSize = 999; BidSize = 999;
+                        Ask = -999.0; Bid = 999.0; AskSize = 999; BidSize = 999;
 
                         while ((line = br.readLine()) != null) {
                             lineData = line.split(",");
@@ -148,7 +148,7 @@ public class IntradayTradesQuotes {
                                 double[] filteredAsks = nbbOfilter.bestAsk(asks);
                                 SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                                 SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                                if (filteredAsks[0] >= filteredBids[0]){
+                                if (filteredAsks[0] > filteredBids[0]){
                                     bestAsk = filteredAsks[0];
                                     bestBid = filteredBids[0];
                                 }
@@ -170,7 +170,7 @@ public class IntradayTradesQuotes {
                                         filteredAsks = nbbOfilter.bestAsk(asks);
                                         SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                                         SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                                        if (filteredAsks[0] >= filteredBids[0]){
+                                        if (filteredAsks[0] > filteredBids[0]){
                                             bestAsk = filteredAsks[0];
                                             bestBid = filteredBids[0];
                                         }
@@ -195,7 +195,7 @@ public class IntradayTradesQuotes {
                                 qNYSE = new ArrayList(nInterval);    qAnyse = new ArrayList(nInterval);   qBnyse = new ArrayList(nInterval);
                                 qAllNBBO = new ArrayList(nInterval); qNyseNBBO = new ArrayList(nInterval);qAskNBOO = new ArrayList(nInterval);  qBidNBBO = new ArrayList(nInterval);
                                 bids = new TreeMap<Double, ArrayList<String[]>>(); asks = new TreeMap<Double, ArrayList<String[]>>();
-                                Ask = 999; Bid = 999; AskSize = 999; BidSize = 999; bestAsk = 999.0; bestBid = 999.0;
+                                Ask = -999; Bid = 999; AskSize = 999; BidSize = 999; bestAsk = -999.0; bestBid = 999.0;
 
                                 date = lineData[1]; // new date
                                 time1 = sdf.parse(tradingStart).getTime();
@@ -206,7 +206,7 @@ public class IntradayTradesQuotes {
                                     filteredAsks = nbbOfilter.bestAsk(asks);
                                     SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                                     SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                                    if (filteredAsks[0] >= filteredBids[0]){
+                                    if (filteredAsks[0] > filteredBids[0]){
                                         bestAsk = filteredAsks[0];
                                         bestBid = filteredBids[0];
                                     }
@@ -276,7 +276,7 @@ public class IntradayTradesQuotes {
                                     double[] filteredAsks = nbbOfilter.bestAsk(asks);
                                     SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                                     SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                                    if (filteredAsks[0] >= filteredBids[0]){
+                                    if (filteredAsks[0] > filteredBids[0]){    // TODO: does this preclude 999.0 quotes?
                                         bestAsk = filteredAsks[0];
                                         bestBid = filteredBids[0];
                                     }
@@ -339,7 +339,7 @@ public class IntradayTradesQuotes {
                             double[] filteredAsks = nbbOfilter.bestAsk(asks);
                             SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                             SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                            if (filteredAsks[0] >= filteredBids[0]){
+                            if (filteredAsks[0] > filteredBids[0]){
                                 bestAsk = filteredAsks[0];
                                 bestBid = filteredBids[0];
                             }
@@ -360,7 +360,7 @@ public class IntradayTradesQuotes {
                                 filteredAsks = nbbOfilter.bestAsk(asks);
                                 SUMqFilteredAll = (long)(filteredBids[1] + filteredAsks[1]);
                                 SUMqFilteredNYSE = (long)(filteredBids[2] + filteredAsks[2]);
-                                if (filteredAsks[0] >= filteredBids[0]){
+                                if (filteredAsks[0] > filteredBids[0]){
                                     bestAsk = filteredAsks[0];
                                     bestBid = filteredBids[0];
                                 }
@@ -386,7 +386,7 @@ public class IntradayTradesQuotes {
                             qNYSE = new ArrayList(nInterval);    qAnyse = new ArrayList(nInterval);   qBnyse = new ArrayList(nInterval);
                             qAllNBBO = new ArrayList(nInterval); qNyseNBBO = new ArrayList(nInterval);qAskNBOO = new ArrayList(nInterval);  qBidNBBO = new ArrayList(nInterval);
                             bids = new TreeMap<Double, ArrayList<String[]>>(); asks = new TreeMap<Double, ArrayList<String[]>>();
-                            Ask = 999.0; Bid = 999.0; AskSize = 999; BidSize = 999; bestAsk = 999.0; bestBid = 999.0;
+                            Ask = -999.0; Bid = 999.0; AskSize = 999; BidSize = 999; bestAsk = -999.0; bestBid = 999.0;
                         }
                         br.close();
                     }

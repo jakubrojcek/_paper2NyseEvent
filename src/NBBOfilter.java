@@ -18,7 +18,7 @@ public class NBBOfilter {
 
     public double[] bestBid(TreeMap<Double, ArrayList<String[]>> bids){
         double[] returnValue = new double[3];
-        returnValue[0] = 999.0;
+        returnValue[0] = 99999.0;
         if (bids.isEmpty()){
             return returnValue;
         }
@@ -56,7 +56,7 @@ public class NBBOfilter {
 
     public double[] bestAsk(TreeMap<Double, ArrayList<String[]>> asks){
         double[] returnValue = new double[3];
-        returnValue[0] = 999.0;
+        returnValue[0] = -999.0;
         if (asks.isEmpty()){
             return returnValue;
         }
