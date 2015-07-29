@@ -20,14 +20,18 @@ public class variousTests {
         }  catch (ParseException e) {
             e.printStackTrace();
         }*/
+        String line = "G I";
+        String[] lineData = line.split(" ");
+        System.out.println(lineData[0] + " " + lineData[1]);
+        System.out.println(line.contains("F"));
 
         ArrayList<String[]> sizes = new ArrayList<String[]>();
-        NBBOfilter nbbOfilter = new NBBOfilter(5, 10);
+        //NBBOfilter nbbOfilter = new NBBOfilter(5, 10);
         TreeMap<Double, ArrayList<String[]>> bids = new TreeMap<Double, ArrayList<String[]>>();
         ArrayList bids2minimize = new ArrayList();
         bids2minimize.add(1.9);bids2minimize.add(2.9);bids2minimize.add(0.9);bids2minimize.add(3.9);bids2minimize.add(3.2);
         bids2minimize.add(4.9);bids2minimize.add(3.9);bids2minimize.add(1.9);bids2minimize.add(1.3);bids2minimize.add(3.1);
-        System.out.println(nbbOfilter.bestAsk(bids2minimize));
+        //System.out.println(nbbOfilter.bestAsk(bids2minimize));
 
 
         String[] line1 = new String[9]; String[] line2 = new String[9];
@@ -50,7 +54,7 @@ public class variousTests {
         sizes = new ArrayList<String[]>(); line1[6] = "10"; line2[6] = "20";sizes.add(line1);sizes.add(line2);
         bids.put(12.5, sizes);
 
-        System.out.println(nbbOfilter.bestAsk(bids)[0]);
+        //System.out.println(nbbOfilter.bestAsk(bids)[0]);
         /*SimpleDateFormat sdf1 = new SimpleDateFormat("HH:mm:ss");
 
         Calendar cal = Calendar.getInstance();

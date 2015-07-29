@@ -10,15 +10,21 @@ import java.util.zip.ZipEntry;
 public class NBBOfilter {
     int nWindows;
     int nIntervals;
+    int t3, t4, q5, q6, q8;
 
-    public NBBOfilter(int nw, int ni) {
+    public NBBOfilter(int nw, int ni, int q5, int q6, int q8, int t3, int t4) {
         this.nWindows = nw;
         this.nIntervals = ni;
+        this.q5 = q5;
+        this.q6 = q6;
+        this.q8 = q8;
+        this.t3 = t3;
+        this.t4 = t4;
     }
 
-    public double[] bestBid(TreeMap<Double, ArrayList<String[]>> bids){
+    public double[] bestBid(TreeMap<Double, ArrayList<String[]>> bids, double upper, double lower){
         double[] returnValue = new double[3];
-        returnValue[0] = 99999.0;
+        returnValue[0] = 999.0;
         if (bids.isEmpty()){
             return returnValue;
         }
@@ -31,19 +37,23 @@ public class NBBOfilter {
         double cumVolume = 0.0;
         long cumShares = 0;
         String[] line;
-        int sz = (int) Math.max(1.0, 0.15 * (bids.size()));    // 85% best bidPrices weighted by volume
+        int sz = (int) Math.max(1.0, upper * (bids.size()));    // 85% best bidPrices weighted by volume
+        int low = (int) Math.max(0.0, lower * (bids.size()));    // 85% best bidPrices weighted by volume
         ArrayList lines;
         for (int i = 0; i < sz; i++){
+            if (i < low){
+                continue;
+            }
             bestBid = (Double) bidPrices.next();
             lines = bids.get(bestBid);
             linesIterator = lines.iterator();
             while (linesIterator.hasNext()){
                 bestAll++;
                 line = (String[]) linesIterator.next();
-                bestSize = Long.parseLong(line[5]);
+                bestSize = Long.parseLong(line[q5]);
                 cumVolume += (bestBid * bestSize);
                 cumShares += bestSize;
-                if(line[8].equals("N") || line[8].equals("P")){ // NYSE and ARCA
+                if(line[q8].equals("N") || line[q8].equals("P")){ // NYSE and ARCA
                     bestNyse++;
                 }
             }
@@ -54,7 +64,7 @@ public class NBBOfilter {
         return returnValue;
     }
 
-    public double[] bestAsk(TreeMap<Double, ArrayList<String[]>> asks){
+    public double[] bestAsk(TreeMap<Double, ArrayList<String[]>> asks, double upper, double lower){
         double[] returnValue = new double[3];
         returnValue[0] = -999.0;
         if (asks.isEmpty()){
@@ -69,22 +79,26 @@ public class NBBOfilter {
         double cumVolume = 0.0;
         long cumShares = 0;
         String[] line;
-        int sz = (int) Math.max(1.0, 0.15 * (asks.size()));    // 85% best bidPrices weighted by volume
+        int sz = (int) Math.max(1.0, upper * (asks.size()));    // 85% best bidPrices weighted by volume
+        int low = (int) Math.max(0.0, lower * (asks.size()));    // 85% best bidPrices weighted by volume
         ArrayList lines;
         for (int i = 0; i < sz; i++){
+            if (i < low){
+                continue;
+            }
             bestAsk = (Double) askPrices.next();
             lines = asks.get(bestAsk);  // TODO: check if works
             linesIterator = lines.iterator();
             while (linesIterator.hasNext()){
                 bestAll++;
                 line = (String[]) linesIterator.next();
-                bestSize = Long.parseLong(line[6]);
+                bestSize = Long.parseLong(line[q6]);
                 if (bestSize == 0 || bestAsk < 0.0){
                     System.out.println("check");
                 }
                 cumVolume += (bestAsk * bestSize);
                 cumShares += bestSize;
-                if(line[8].equals("N") || line[8].equals("P")){ // NYSE and ARCA
+                if(line[q8].equals("N") || line[q8].equals("P")){ // NYSE and ARCA
                     bestNyse++;
                 }
             }
@@ -144,13 +158,13 @@ public class NBBOfilter {
         String[] line;
         while (lines.hasNext()){
             line = (String[]) lines.next();
-            price = Double.parseDouble(line[3]);
-            quantity = Integer.parseInt(line[4]);
+            price = Double.parseDouble(line[t3]);
+            quantity = Integer.parseInt(line[t4]);
             cumVolume += (price * quantity);
             cumShares += quantity;
         }
-        returnValue[0] = (cumVolume / cumShares);
-        returnValue[1] = (cumVolume / returnValue[0]);
+        returnValue[0] = (cumVolume / cumShares);           // Volume Weighted Average Price
+        returnValue[1] = (cumVolume / returnValue[0]);      // Number of shares
 
         return returnValue;
     }
